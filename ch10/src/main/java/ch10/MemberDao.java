@@ -167,14 +167,19 @@ public class MemberDao {
 		}
 		return result;
 	}
-	public List<Member> list() {
+	public List<Member> list(int startRow, int endRow) {
 		List<Member> list = new ArrayList<Member>();
 		PreparedStatement pstmt = null;
-		String sql = "select * from member2 order by reg_date desc";
+//		String sql = "select * from member2 order by reg_date desc";
+		String sql = "select * from (select rowNum rn, a.* from "
+				+ "(select * from member2 order by reg_date desc) a)"
+				+ "    where rn between ? and ?";
 		ResultSet rs = null;
 		Connection conn = getConnection();
 		try {
 			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, startRow);
+			pstmt.setInt(2, endRow);
 			rs = pstmt.executeQuery();
 			while (rs.next()) {
 				Member member = new Member();
@@ -196,5 +201,28 @@ public class MemberDao {
 			}catch (Exception e) {		}
 		}
 		return list;
+	}
+	public int getTotal() {
+		int total = 0;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		Connection conn = getConnection();
+		String sql = "select count(*) from member2";
+		try {
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			if (rs.next()) {
+				total = rs.getInt(1);
+			}
+		}catch (Exception e) {
+			System.out.println(e.getMessage());
+		}finally {
+			try {
+				if (rs != null) rs.close();
+				if (pstmt != null) pstmt.close();
+				if (conn != null)  conn.close();
+			}catch (Exception e) {		}
+		}
+		return total;
 	}
 }
